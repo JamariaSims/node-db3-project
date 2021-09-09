@@ -1,16 +1,5 @@
 const db = require("../../data/db-config");
-module.exports = {
-  async find() {
-    const results = await db("schemes as sc")
-      .leftJoin("steps as st", "sc.scheme_id", "st.scheme_id")
-      .select("sc.*")
-      .count("st.step_id as number_of_steps")
-      .groupBy("sc.scheme_id");
-    return results;
-  },
-};
 
-// function find() {
 // EXERCISE A
 /*
     1A- Study the SQL query below running it in SQLite Studio against `data/schemes.db3`.
@@ -28,6 +17,38 @@ module.exports = {
     2A- When you have a grasp on the query go ahead and build it in Knex.
     Return from this function the resulting dataset.
   */
+exports.find = async () => {
+  const results = await db("schemes as sc")
+    .leftJoin("steps as st", "sc.scheme_id", "st.scheme_id")
+    .select("sc.*")
+    .count("st.step_id as number_of_steps")
+    .groupBy("sc.scheme_id");
+  return results;
+};
+exports.findById = async (scheme_id) => {
+  const results = await db("schemes as sc")
+    .leftJoin("steps as st", "sc.scheme_id", "st.scheme_id")
+    .select("st.*", "sc.scheme_name")
+    .where("sc.scheme_id", scheme_id)
+    .orderBy("st.step_number");
+  const result = {
+    scheme_id: results[0].scheme_id,
+    scheme_name: results[0].scheme_name,
+    steps: results.map((r) => ({
+      step_id: r.step_id,
+      step_number: r.step_number,
+      instructions: r.instructions,
+    })),
+  };
+  return result;
+};
+exports.add = (scheme) => {
+  return db("schemes")
+    .insert(scheme)
+    .then(([id]) => {
+      return db("schemes").where("scheme_id", id).first();
+    });
+};
 
 // function findById(scheme_id) {
 // EXERCISE B
